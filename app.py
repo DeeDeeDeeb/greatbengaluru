@@ -4,6 +4,10 @@ import tensorflow as tf
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+if __name__ == "__main__":
+    print("Starting FastAPI app...")
+    uvicorn.run(app, host="0.0.0.0", port=5000)
+
 # Load trained model
 model = tf.keras.models.load_model("ride_acceptance_model.keras")
 
@@ -12,6 +16,7 @@ scaler = joblib.load("scaler.pkl")
 
 # FastAPI app
 app = FastAPI()
+
 
 class RideRequest(BaseModel):
     feature1: float
