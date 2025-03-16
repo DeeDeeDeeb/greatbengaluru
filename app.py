@@ -1,39 +1,30 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import CORS
 import joblib
-import numpy as np
-import tensorflow as tf
-import uvicorn
-from fastapi import FastAPI
-from pydantic import BaseModel
+import pandas as pd
 
-# FastAPI app
-app = FastAPI()
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Load trained model
-model = tf.keras.models.load_model("ride_acceptance_model.keras")
-# Load the same scaler used in training
-scaler = joblib.load("scaler.pkl")
+# Load the trained model
+model = joblib.load('demand_prediction_model.pkl')
 
-class RideRequest(BaseModel):
-    feature1: float
-    feature2: float
-    feature3: float
-    feature4: float
-    feature5: float
+@app.route('/predict', methods=['POST'])
+def predict():
+    # Get input data from the request
+    data = request.json
 
-@app.post("/predict/")
-async def predict_ride_acceptance(data: RideRequest):
-    # Convert input into NumPy array
-    input_data = np.array([[data.feature1, data.feature2, data.feature3, data.feature4, data.feature5]])
-    
-    print("Raw Input:", input_data)  # Debugging
-    input_data = scaler.transform(input_data)
-    print("Scaled Input:", input_data)
-   
-    # Get prediction
-    prediction = model.predict(input_data)[0][0]
-    acceptance = int(prediction > 0.3)  # Convert probability to binary output
-    return {"acceptance_probability": float(prediction), "accepted": acceptance}
+    # Convert input data into a DataFrame
+    input_data = pd.DataFrame([data])
 
-if __name__ == "__main__":
-    print("Starting FastAPI app...")
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    # Ensure the columns match the training data
+    input_data = input_data[['location_id', 'hour', 'day_of_week']]
+
+    # Make a prediction
+    prediction = model.predict(input_data)
+
+    # Return the prediction as a JSON response
+    return jsonify({'predicted_demand': prediction[0]})
+
+if __name__ == '__main__':
+    app.run(debug=True)
