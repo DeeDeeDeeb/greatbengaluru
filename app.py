@@ -36,3 +36,5 @@ async def predict_ride_acceptance(data: RideRequest):
     acceptance = int(prediction > 0.3)  # Convert probability to binary output
 
     return {"acceptance_probability": float(prediction), "accepted": acceptance}
+
+
